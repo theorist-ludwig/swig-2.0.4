@@ -173,6 +173,12 @@ public:
       if (argv[i]) {
         if (strcmp(argv[i], "-help") == 0) {	// usage flags
           fputs(usage, stdout);
+        } else if(strcmp(argv[i], "-elua0.8") == 0) {
+          elua_ltr = 1;
+          Swig_mark_arg(i);
+        } else if(strcmp(argv[i], "-eluac0.8") == 0) {
+          eluac_ltr = 1;
+          Swig_mark_arg(i);
         }
       }
     }
@@ -186,11 +192,28 @@ public:
     /* Add a symbol to the parser for conditional compilation */
     Preprocessor_define("SWIGLUA 1", 0);
 
-    /* Set language-specific configuration file */
-    SWIG_config_file("lua.swg");
+    if (elua_ltr) {
+      /* Set language-specific configuration file for -elua0.8*/
+      SWIG_config_file("elua.swg");
 
-    /* Set typemap language */
-    SWIG_typemap_lang("lua");
+      /* Set typemap language */
+      SWIG_typemap_lang("elua");
+
+    } else if (eluac_ltr) {
+      /* Set language-specific configuration file for -eluac0.8*/
+      SWIG_config_file("eluac.swg");
+
+      /* Set typemap language */
+      SWIG_typemap_lang("eluac");
+
+    } else {
+
+      /* Set language-specific configuration file */
+      SWIG_config_file("lua.swg");
+
+      /* Set typemap language */
+      SWIG_typemap_lang("lua");
+    }
 
     /* Enable overloaded methods support */
     allow_overloading();
