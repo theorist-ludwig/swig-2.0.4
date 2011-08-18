@@ -1,3 +1,6 @@
+
+"Hello world!"
+
 /* -----------------------------------------------------------------------------
  * This file is part of SWIG, which is licensed as a whole under version 3 
  * (or any later version) of the GNU General Public License. Some additional
