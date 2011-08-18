@@ -1,6 +1,3 @@
-
-"Hello world!"
-
 /* -----------------------------------------------------------------------------
  * This file is part of SWIG, which is licensed as a whole under version 3 
  * (or any later version) of the GNU General Public License. Some additional
@@ -43,8 +40,9 @@
  * ver009
    class support: ok for basic types, but methods still TDB
    (code is VERY messed up & needs to be cleaned)
- 
- 
+ * ver010
+   Added support for embedded Lua. Try swig -lua -help for more information.
+   Added by: raman gopalan, ramangopalan at gmail dot com
 */
 
 char cvsroot_lua_cxx[] = "$Id: lua.cxx 12655 2011-05-05 06:23:02Z wsfulton $";
@@ -86,9 +84,9 @@ void display_mapping(DOH *d) {
 NEW LANGUAGE NOTE:END ************************************************/
 static const char *usage = (char *) "\
 Lua Options (available with -lua)\n\
-     [no additional options]\n\
+     -elua0.8        - Generates LTR compatible wrappers for smaller devices running elua0.8 \n\
+     -eluac0.8       - LTR compatible wrappers in \"crass compress\" mode for elua0.8 \n\
 \n";
-
 
 
 /* NEW LANGUAGE NOTE:***********************************************
