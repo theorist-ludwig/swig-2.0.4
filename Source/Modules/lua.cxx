@@ -193,22 +193,21 @@ public:
     Preprocessor_define("SWIGLUA 1", 0);
 
     if (elua_ltr) {
-      /* Set language-specific configuration file for -elua0.8*/
+      /* Set language-specific configuration file for -elua0.8 */
       SWIG_config_file("elua.swg");
 
       /* Set typemap language */
       SWIG_typemap_lang("elua");
 
     } else if (eluac_ltr) {
-      /* Set language-specific configuration file for -eluac0.8*/
+      /* Set language-specific configuration file for -eluac0.8 */
       SWIG_config_file("eluac.swg");
 
       /* Set typemap language */
       SWIG_typemap_lang("eluac");
 
     } else {
-
-      /* Set language-specific configuration file */
+      /* Set language-specific configuration file for regular Lua */
       SWIG_config_file("lua.swg");
 
       /* Set typemap language */
@@ -276,6 +275,10 @@ public:
     //    s_methods_tab    = NewString("");
     s_const_tab = NewString("");
     
+    s_dot_get = NewString("");
+    s_dot_set = NewString("");
+    s_var_mt = NewString("");
+
     s_luacode = NewString("");
     Swig_register_filebyname("luacode", s_luacode);
     
@@ -286,6 +289,12 @@ public:
 
     Printf(f_runtime, "\n");
     Printf(f_runtime, "#define SWIGLUA\n");
+
+    if (elua_ltr || eluac_ltr) {
+      /* LSTRVAL macro for wrapping C string macro */
+      Printf(f_runtime, "#define LRO_STRVAL(v) {{.p = (char *) v}, LUA_TSTRING}\n");
+      Printf(f_runtime, "#define LSTRVAL LRO_STRVAL\n");
+    }
 
     //    if (NoInclude) {
     //      Printf(f_runtime, "#define SWIG_NOINCLUDE\n");
@@ -303,10 +312,27 @@ public:
     Printf(f_header, "#define SWIG_init_user luaopen_%s_user\n\n", module);
     Printf(f_header, "#define SWIG_LUACODE   luaopen_%s_luacode\n\n", module);
 
-    Printf(s_cmd_tab, "\nstatic const struct luaL_reg swig_commands[] = {\n");
-    Printf(s_var_tab, "\nstatic swig_lua_var_info swig_variables[] = {\n");
-    Printf(s_const_tab, "\nstatic swig_lua_const_info swig_constants[] = {\n");
-    Printf(f_wrappers, "#ifdef __cplusplus\nextern \"C\" {\n#endif\n");
+    if (elua_ltr || eluac_ltr)
+      Printf(f_header, "#define swig_commands   %s_map\n\n", module);
+
+    if (elua_ltr || eluac_ltr) {
+      Printf(s_cmd_tab, "\n#define MIN_OPT_LEVEL 2\n#include \"lrodefs.h\"\n");
+      Printf(s_cmd_tab, "\nconst LUA_REG_TYPE swig_constants[];\n");
+      if (elua_ltr)
+        Printf(s_cmd_tab, "const LUA_REG_TYPE mt[];\n");
+      Printf(s_cmd_tab, "\nconst LUA_REG_TYPE swig_commands[] = {\n");
+      Printf(s_const_tab, "\nconst LUA_REG_TYPE swig_constants[] = {\n");
+      Printf(f_wrappers, "#ifdef __cplusplus\nextern \"C\" {\n#endif\n");
+      if (elua_ltr) {
+        Printf(s_dot_get, "\nconst LUA_REG_TYPE dot_get[] = {\n");
+        Printf(s_dot_set, "\nconst LUA_REG_TYPE dot_set[] = {\n");
+      }
+    } else {
+      Printf(s_cmd_tab, "\nstatic const struct luaL_reg swig_commands[] = {\n");
+      Printf(s_var_tab, "\nstatic swig_lua_var_info swig_variables[] = {\n");
+      Printf(s_const_tab, "\nstatic swig_lua_const_info swig_constants[] = {\n");
+      Printf(f_wrappers, "#ifdef __cplusplus\nextern \"C\" {\n#endif\n");
+    }
 
     /* %init code inclusion, effectively in the SWIG_init function */
     Printf(f_init, "void SWIG_init_user(lua_State* L)\n{\n");
@@ -317,11 +343,39 @@ public:
     Printf(f_wrappers, "#ifdef __cplusplus\n}\n#endif\n");
 
     // Done.  Close up the module & write to the wrappers
-    Printv(s_cmd_tab, tab4, "{0,0}\n", "};\n", NIL);
-    Printv(s_var_tab, tab4, "{0,0,0}\n", "};\n", NIL);
-    Printv(s_const_tab, tab4, "{0,0,0,0,0,0}\n", "};\n", NIL);
-    Printv(f_wrappers, s_cmd_tab, s_var_tab, s_const_tab, NIL);
-    SwigType_emit_type_table(f_runtime, f_wrappers);
+    if (elua_ltr || eluac_ltr) {
+      Printv(s_cmd_tab, tab4, "{LSTRKEY(\"const\"), LROVAL(swig_constants)},\n", NIL);
+      if (elua_ltr)
+        Printv(s_cmd_tab, tab4, "{LSTRKEY(\"__metatable\"), LROVAL(mt)},\n", NIL);
+      Printv(s_cmd_tab, tab4, "{LNILKEY, LNILVAL}\n", "};\n", NIL);
+      Printv(s_const_tab, tab4, "{LNILKEY, LNILVAL}\n", "};\n", NIL);
+    } else {
+      Printv(s_cmd_tab, tab4, "{0,0}\n", "};\n", NIL);
+      Printv(s_var_tab, tab4, "{0,0,0}\n", "};\n", NIL);
+      Printv(s_const_tab, tab4, "{0,0,0,0,0,0}\n", "};\n", NIL);
+    }
+
+    if (elua_ltr) {
+      /* Generate the metatable */
+      Printf(s_var_mt, "\nconst LUA_REG_TYPE mt[] = {\n");
+      Printv(s_var_mt, tab4, "{LSTRKEY(\"__index\"), LFUNCVAL(SWIG_Lua_module_get)},\n", NIL);
+      Printv(s_var_mt, tab4, "{LSTRKEY(\"__newindex\"), LFUNCVAL(SWIG_Lua_module_set)},\n", NIL);
+      Printv(s_var_mt, tab4, "{LSTRKEY(\".get\"), LROVAL(dot_get)},\n", NIL);
+      Printv(s_var_mt, tab4, "{LSTRKEY(\".set\"), LROVAL(dot_set)},\n", NIL);
+      Printv(s_var_mt, tab4, "{LNILKEY, LNILVAL}\n};\n", NIL);
+
+      Printv(s_dot_get, tab4, "{LNILKEY, LNILVAL}\n};\n", NIL);
+      Printv(s_dot_set, tab4, "{LNILKEY, LNILVAL}\n};\n", NIL);
+    }
+
+    if (elua_ltr || eluac_ltr) {
+      /* Final close up of wrappers */
+      Printv(f_wrappers, s_cmd_tab, s_dot_get, s_dot_set, s_var_mt, s_var_tab, s_const_tab, NIL);
+      SwigType_emit_type_table(f_runtime, f_wrappers);
+    } else {
+      Printv(f_wrappers, s_cmd_tab, s_var_tab, s_const_tab, NIL);
+      SwigType_emit_type_table(f_runtime, f_wrappers);
+    }
 
     /* NEW LANGUAGE NOTE:***********************************************
      this basically combines several of the strings together
@@ -347,6 +401,9 @@ public:
     Close(f_begin);
     Delete(f_runtime);
     Delete(f_begin);
+    Delete(s_dot_get);
+    Delete(s_dot_set);
+    Delete(s_var_mt);
 
     /* Done */
     return SWIG_OK;
@@ -675,9 +732,13 @@ public:
     /* Now register the function with the interpreter. */
     if (!Getattr(n, "sym:overloaded")) {
       //      add_method(n, iname, wname, description);
-      if (current==NO_CPP || current==STATIC_FUNC) // emit normal fns & static fns
-        Printv(s_cmd_tab, tab4, "{ \"", iname, "\", ", Swig_name_wrapper(iname), "},\n", NIL);
+      if (current==NO_CPP || current==STATIC_FUNC) { // emit normal fns & static fns
+        if(elua_ltr || eluac_ltr)
+          Printv(s_cmd_tab, tab4, "{LSTRKEY(\"", iname, "\")", ", LFUNCVAL(", Swig_name_wrapper(iname), ")", "},\n", NIL);
+        else
+          Printv(s_cmd_tab, tab4, "{ \"", iname, "\", ", Swig_name_wrapper(iname), "},\n", NIL);
       //      Printv(s_cmd_tab, tab4, "{ SWIG_prefix \"", iname, "\", (swig_wrapper_func) ", Swig_name_wrapper(iname), "},\n", NIL);
+      }
     } else {
       if (!Getattr(n, "sym:nextSibling")) {
         dispatchFunction(n);
