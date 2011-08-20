@@ -862,8 +862,17 @@ public:
       setName = NewString("SWIG_Lua_set_immutable"); // error message
       //setName = NewString("0");
     }
+    
     // register the variable
-    Printf(s_var_tab, "%s{ \"%s\", %s, %s },\n", tab4, iname, getName, setName);
+    if (elua_ltr) {
+      Printf(s_dot_get, "%s{LSTRKEY(\"%s\"), LFUNCVAL(%s)},\n", tab4, iname, getName);
+      Printf(s_dot_set, "%s{LSTRKEY(\"%s\"), LFUNCVAL(%s)},\n", tab4, iname, setName);
+    } else if (eluac_ltr) {
+      Printv(s_cmd_tab, tab4, "{LSTRKEY(\"", iname, "_get", "\")", ", LFUNCVAL(", getName, ")", "},\n", NIL);
+      Printv(s_cmd_tab, tab4, "{LSTRKEY(\"", iname, "_set", "\")", ", LFUNCVAL(", setName, ")", "},\n", NIL);
+    } else {
+      Printf(s_var_tab, "%s{ \"%s\", %s, %s },\n", tab4, iname, getName, setName);
+    }
     Delete(getName);
     Delete(setName);
     return result;
@@ -897,7 +906,7 @@ public:
       Replaceall(tm, "$target", name);
       Replaceall(tm, "$value", value);
       Replaceall(tm, "$nsname", nsname);
-      Printf(s_const_tab, "%s,\n", tm);
+      Printf(s_const_tab, "    %s,\n", tm);
     } else if ((tm = Swig_typemap_lookup("constcode", n, name, 0))) {
       Replaceall(tm, "$source", value);
       Replaceall(tm, "$target", name);
@@ -1081,7 +1090,17 @@ public:
     Printv(f_wrappers, "static swig_lua_class _wrap_class_", mangled_classname, " = { \"", class_name, "\", &SWIGTYPE", SwigType_manglestr(t), ",", NIL);
 
     if (have_constructor) {
-      Printf(f_wrappers, "%s", Swig_name_wrapper(Swig_name_construct(NSPACE_TODO, constructor_name)));
+      if (elua_ltr) {
+        Printf(s_cmd_tab, "    {LSTRKEY(\"%s\"), LFUNCVAL(%s)},\n", class_name, \
+        Swig_name_wrapper(Swig_name_construct(NSPACE_TODO, constructor_name)));
+        Printf(f_wrappers, "%s", Swig_name_wrapper(Swig_name_construct(NSPACE_TODO, constructor_name)));
+      } else if (eluac_ltr) {
+        Printv(s_cmd_tab, tab4, "{LSTRKEY(\"", "new_", class_name, "\")", ", LFUNCVAL(", \
+        Swig_name_wrapper(Swig_name_construct(NSPACE_TODO, constructor_name)), ")", "},\n", NIL);
+        Printf(f_wrappers, "%s", Swig_name_wrapper(Swig_name_construct(NSPACE_TODO, constructor_name)));
+      } else {
+        Printf(f_wrappers, "%s", Swig_name_wrapper(Swig_name_construct(NSPACE_TODO, constructor_name)));
+      }
       Delete(constructor_name);
       constructor_name = 0;
     } else {
@@ -1089,7 +1108,12 @@ public:
     }
 
     if (have_destructor) {
-      Printv(f_wrappers, ", swig_delete_", class_name, NIL);
+      if (eluac_ltr) {
+        Printv(s_cmd_tab, tab4, "{LSTRKEY(\"", "free_", class_name, "\")", ", LFUNCVAL(", "swig_delete_", class_name, ")", "},\n", NIL);
+        Printv(f_wrappers, ", swig_delete_", class_name, NIL);
+      } else {
+         Printv(f_wrappers, ", swig_delete_", class_name, NIL);
+      }
     } else {
       Printf(f_wrappers, ",0");
     }
@@ -1155,6 +1179,12 @@ public:
       sname = NewString("SWIG_Lua_set_immutable"); // error message
     }
     Printf(s_attr_tab,"%s{ \"%s\", %s, %s},\n",tab4,symname,gname,sname);
+    if (eluac_ltr) {
+      Printv(s_cmd_tab, tab4, "{LSTRKEY(\"", class_name, "_", symname, "_get", "\")", \
+      ", LFUNCVAL(", gname, ")", "},\n", NIL);
+      Printv(s_cmd_tab, tab4, "{LSTRKEY(\"", class_name, "_", symname, "_set", "\")", \
+      ", LFUNCVAL(", sname, ")", "},\n", NIL);
+    }
     Delete(gname);
     Delete(sname);
     return SWIG_OK;
@@ -1235,20 +1265,32 @@ public:
    */
   String *runtimeCode() {
     String *s = NewString("");
-    const char *filenames[] = { "luarun.swg", 0
-                              }
-                              ;	// must be 0 termiated
+    const char *filenames[] = { "eluarun.swg",
+                                "eluacrun.swg",
+				"luarun.swg", 0 // Must be 0 terminated
+                              };
     String *sfile;
-    for (int i = 0; filenames[i] != 0; i++) {
-      sfile = Swig_include_sys(filenames[i]);
+    if (elua_ltr) {
+      sfile = Swig_include_sys(filenames[0]);
       if (!sfile) {
-        Printf(stderr, "*** Unable to open '%s'\n", filenames[i]);
-      } else {
-        Append(s, sfile);
-        Delete(sfile);
+        Printf(stderr, "*** Unable to open '%s'\n", filenames[0]);
+      }
+    } else if (eluac_ltr) {
+      sfile = Swig_include_sys(filenames[1]);
+      if (!sfile) {
+        Printf(stderr, "*** Unable to open '%s'\n", filenames[1]);
+      }
+    } else {
+      sfile = Swig_include_sys(filenames[2]);
+      if (!sfile) {
+        Printf(stderr, "*** Unable to open '%s'\n", filenames[2]);
       }
     }
 
+    if (sfile) {
+      Append(s, sfile);
+      Delete(sfile);
+    } 
     return s;
   }
 
