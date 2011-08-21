@@ -60,6 +60,9 @@ char cvsroot_lua_cxx[] = "$Id: lua.cxx 12655 2011-05-05 06:23:02Z wsfulton $";
 //#define REPORT(T,D)   {Printf(stdout,T"\n");display_mapping(D);}      // the works
 //#define REPORT(T,D)   {Printf(stdout,T"\n");if(D)Swig_print_node(D);}      // the works
 
+static int elua_ltr;
+static int eluac_ltr;
+
 void display_mapping(DOH *d) {
   if (d == 0 || !DohIsMapping(d))
     return;
@@ -111,6 +114,9 @@ private:
   String *s_methods_tab;	// table of class methods
   String *s_attr_tab;		// table of class atributes
   String *s_luacode;		// luacode to be called during init
+  String *s_dot_get;            // table of variable 'get' functions
+  String *s_dot_set;            // table of variable 'set' functions
+  String *s_var_mt;             // metatable for variables
 
   int have_constructor;
   int have_destructor;
