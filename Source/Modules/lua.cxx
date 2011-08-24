@@ -323,7 +323,7 @@ public:
 
     if (elua_ltr || eluac_ltr) {
       Printf(s_cmd_tab, "\n#define MIN_OPT_LEVEL 2\n#include \"lrodefs.h\"\n");
-      Printf(s_cmd_tab, "\n#include \"lrotable.h\"\n");
+      Printf(s_cmd_tab, "#include \"lrotable.h\"\n");
       Printf(s_cmd_tab, "\nconst LUA_REG_TYPE swig_constants[];\n");
       if (elua_ltr)
         Printf(s_cmd_tab, "const LUA_REG_TYPE mt[];\n");
