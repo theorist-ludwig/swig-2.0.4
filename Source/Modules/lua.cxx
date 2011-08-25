@@ -316,10 +316,10 @@ public:
     Printf(f_header, "#define SWIG_name      \"%s\"\n", module);
     Printf(f_header, "#define SWIG_init      luaopen_%s\n", module);
     Printf(f_header, "#define SWIG_init_user luaopen_%s_user\n\n", module);
-    Printf(f_header, "#define SWIG_LUACODE   luaopen_%s_luacode\n\n", module);
+    Printf(f_header, "#define SWIG_LUACODE   luaopen_%s_luacode\n", module);
 
     if (elua_ltr || eluac_ltr)
-      Printf(f_header, "#define swig_commands   %s_map\n\n", module);
+      Printf(f_header, "#define swig_commands  %s_map\n\n", module);
 
     if (elua_ltr || eluac_ltr) {
       Printf(s_cmd_tab, "\n#define MIN_OPT_LEVEL 2\n#include \"lrodefs.h\"\n");
