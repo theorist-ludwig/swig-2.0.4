@@ -42,7 +42,6 @@
    (code is VERY messed up & needs to be cleaned)
  * ver010
    Added support for embedded Lua. Try swig -lua -help for more information.
-   Added by: raman gopalan, ramangopalan at gmail dot com
 */
 
 char cvsroot_lua_cxx[] = "$Id: lua.cxx 12655 2011-05-05 06:23:02Z wsfulton $";
@@ -295,6 +294,12 @@ public:
 
     Printf(f_runtime, "\n");
     Printf(f_runtime, "#define SWIGLUA\n");
+
+    Printf(f_runtime, "#if SWIG_LUA_TARGET == SWIG_LUA\n");
+    Printf(f_runtime, "#define SWIG_LUA_CONSTTAB(A, B, C) A, (char *)B, (long)C, 0, 0 ,0\n");
+    Printf(f_runtime, "#else\n#define SWIG_LUA_CONSTTAB(A, B, C) LSTRKEY(B), LNUMVAL(C)\n");
+    Printf(f_runtime, "#define SWIG_LUA_CONSTTAB_STR(A, B, C) LSTRKEY(B), LSTRVAL(C)\n");
+    Printf(f_runtime, "#endif\n");
 
     if (elua_ltr || eluac_ltr) {
       /* LSTRVAL macro for wrapping C string macro */
