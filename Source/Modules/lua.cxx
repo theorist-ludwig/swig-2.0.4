@@ -197,27 +197,11 @@ public:
     /* Add a symbol to the parser for conditional compilation */
     Preprocessor_define("SWIGLUA 1", 0);
 
-    if (elua_ltr) {
-      /* Set language-specific configuration file for -elua0.8 */
-      SWIG_config_file("elua.swg");
+    /* Set language-specific configuration file */
+    SWIG_config_file("lua.swg");
 
-      /* Set typemap language */
-      SWIG_typemap_lang("elua");
-
-    } else if (eluac_ltr) {
-      /* Set language-specific configuration file for -eluac0.8 */
-      SWIG_config_file("eluac.swg");
-
-      /* Set typemap language */
-      SWIG_typemap_lang("eluac");
-
-    } else {
-      /* Set language-specific configuration file for regular Lua */
-      SWIG_config_file("lua.swg");
-
-      /* Set typemap language */
-      SWIG_typemap_lang("lua");
-    }
+    /* Set typemap language */
+    SWIG_typemap_lang("lua");
 
     /* Enable overloaded methods support */
     allow_overloading();
@@ -294,17 +278,28 @@ public:
 
     Printf(f_runtime, "\n");
     Printf(f_runtime, "#define SWIGLUA\n");
+    Printf(f_runtime, "\n#define SWIG_LUA 1\n#define SWIG_ELUA 2\n#define SWIG_ELUAC 3\n\n");
+   
+    if(elua_ltr)
+      Printf(f_runtime, "#define SWIG_LUA_TARGET SWIG_ELUA\n\n");
+    else if(eluac_ltr)
+      Printf(f_runtime, "#define SWIG_LUA_TARGET SWIG_ELUAC\n\n");
+    else
+      Printf(f_runtime, "#define SWIG_LUA_TARGET SWIG_LUA\n\n");
 
     Printf(f_runtime, "#if SWIG_LUA_TARGET == SWIG_LUA\n");
-    Printf(f_runtime, "#define SWIG_LUA_CONSTTAB(A, B, C) A, (char *)B, (long)C, 0, 0 ,0\n");
-    Printf(f_runtime, "#else\n#define SWIG_LUA_CONSTTAB(A, B, C) LSTRKEY(B), LNUMVAL(C)\n");
-    Printf(f_runtime, "#define SWIG_LUA_CONSTTAB_STR(A, B, C) LSTRKEY(B), LSTRVAL(C)\n");
+    Printf(f_runtime, "#  define SWIG_LUA_CONSTTAB_INT(A, B, C) A, (char *)B, (long)C, 0, 0 ,0\n");
+    Printf(f_runtime, "#  define SWIG_LUA_CONSTTAB_FLOAT(A, B, C) A, (char *)B, 0, (double)C, 0, 0\n");
+    Printf(f_runtime, "#  define SWIG_LUA_CONSTTAB_STRING(A, B, C) A, (char *)B, 0, 0, (void *)C, 0\n");
+    Printf(f_runtime, "# else\n#  define SWIG_LUA_CONSTTAB_INT(A, B, C) LSTRKEY(B), LNUMVAL(C)\n");
+    Printf(f_runtime, "#  define SWIG_LUA_CONSTTAB_FLOAT(A, B, C) LSTRKEY(B), LNUMVAL(C)\n");
+    Printf(f_runtime, "#  define SWIG_LUA_CONSTTAB_STRING(A, B, C) LSTRKEY(B), LSTRVAL(C)\n");
     Printf(f_runtime, "#endif\n");
 
     if (elua_ltr || eluac_ltr) {
       /* LSTRVAL macro for wrapping C string macro */
-      Printf(f_runtime, "#define LRO_STRVAL(v) {{.p = (char *) v}, LUA_TSTRING}\n");
-      Printf(f_runtime, "#define LSTRVAL LRO_STRVAL\n");
+      Printf(f_runtime, "\n#define LRO_STRVAL(v) {{.p = (char *) v}, LUA_TSTRING}");
+      Printf(f_runtime, "\n#define LSTRVAL LRO_STRVAL\n");
     }
 
     //    if (NoInclude) {
@@ -332,6 +327,7 @@ public:
       Printf(s_cmd_tab, "\nconst LUA_REG_TYPE swig_constants[];\n");
       if (elua_ltr)
         Printf(s_cmd_tab, "const LUA_REG_TYPE mt[];\n");
+
       Printf(s_cmd_tab, "\nconst LUA_REG_TYPE swig_commands[] = {\n");
       Printf(s_const_tab, "\nconst LUA_REG_TYPE swig_constants[] = {\n");
       Printf(f_wrappers, "#ifdef __cplusplus\nextern \"C\" {\n#endif\n");

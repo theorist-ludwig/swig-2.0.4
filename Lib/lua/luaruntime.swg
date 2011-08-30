@@ -17,18 +17,28 @@ void SWIG_init_user(lua_State* L );
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /* this is the initialization function
   added at the very end of the code
   the function is always called SWIG_init, but an eariler #define will rename it
 */
+
+#if (SWIG_LUA_TARGET == SWIG_LUA)
 SWIGEXPORT int SWIG_init(lua_State* L)
+#else
+LUALIB_API int SWIG_init(lua_State* L)
+#endif
 {
+#if (SWIG_LUA_TARGET == SWIG_LUA) || (SWIG_LUA_TARGET == SWIG_ELUA)
   int i;
   /* start with global table */
   lua_pushvalue(L,LUA_GLOBALSINDEX);
   /* SWIG's internal initalisation */
   SWIG_InitializeModule((void*)L);
   SWIG_PropagateClientData();
+#endif
+  
+#if (SWIG_LUA_TARGET == SWIG_LUA)
   /* add a global fn */
   SWIG_Lua_add_function(L,"swig_type",SWIG_Lua_type);
   SWIG_Lua_add_function(L,"swig_equals",SWIG_Lua_equal);
@@ -42,6 +52,9 @@ SWIGEXPORT int SWIG_init(lua_State* L)
   for (i = 0; swig_variables[i].name; i++){
     SWIG_Lua_module_add_variable(L,swig_variables[i].name,swig_variables[i].get,swig_variables[i].set);
   }
+#endif
+
+#if (SWIG_LUA_TARGET == SWIG_LUA) || (SWIG_LUA_TARGET == SWIG_ELUA)
   /* set up base class pointers (the hierachy) */
   for (i = 0; swig_types[i]; i++){
     if (swig_types[i]->clientdata){
@@ -54,14 +67,23 @@ SWIGEXPORT int SWIG_init(lua_State* L)
       SWIG_Lua_class_register(L,(swig_lua_class*)(swig_types[i]->clientdata));
     }
   }
+#endif  
+
+#if (SWIG_LUA_TARGET == SWIG_LUA)
   /* constants */
   SWIG_Lua_InstallConstants(L,swig_constants);
+#endif
+
+#if (SWIG_LUA_TARGET == SWIG_LUA) || (SWIG_LUA_TARGET == SWIG_ELUA)
   /* invoke user-specific initialization */
   SWIG_init_user(L);
   /* end module */
   lua_pop(L,1);  /* tidy stack (remove module table)*/
   lua_pop(L,1);  /* tidy stack (remove global table)*/
   return 1;
+#else
+  return 0;
+#endif
 }
 
 #ifdef __cplusplus
