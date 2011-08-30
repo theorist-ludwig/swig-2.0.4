@@ -86,8 +86,8 @@ void display_mapping(DOH *d) {
 NEW LANGUAGE NOTE:END ************************************************/
 static const char *usage = (char *) "\
 Lua Options (available with -lua)\n\
-     -elua0.8        - Generates LTR compatible wrappers for smaller devices running elua0.8 \n\
-     -eluac0.8       - LTR compatible wrappers in \"crass compress\" mode for elua0.8 \n\
+     -elua           - Generates LTR compatible wrappers for smaller devices running elua0.8 \n\
+     -eluac          - LTR compatible wrappers in \"crass compress\" mode for elua0.8 \n\
 \n";
 
 
@@ -178,10 +178,10 @@ public:
       if (argv[i]) {
         if (strcmp(argv[i], "-help") == 0) {	// usage flags
           fputs(usage, stdout);
-        } else if(strcmp(argv[i], "-elua0.8") == 0) {
+        } else if(strcmp(argv[i], "-elua") == 0) {
           elua_ltr = 1;
           Swig_mark_arg(i);
-        } else if(strcmp(argv[i], "-eluac0.8") == 0) {
+        } else if(strcmp(argv[i], "-eluac") == 0) {
           eluac_ltr = 1;
           Swig_mark_arg(i);
         }
