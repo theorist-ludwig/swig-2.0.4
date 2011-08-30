@@ -1278,9 +1278,9 @@ public:
 			      ; // Must be 0 terminated
     String *sfile;
     for (int i = 0; filenames[i] != 0; i++) {
-      sfile = Swig_include_sys(filenames[2]);
+      sfile = Swig_include_sys(filenames[i]);
       if (!sfile) {
-        Printf(stderr, "*** Unable to open '%s'\n", filenames[2]);
+        Printf(stderr, "*** Unable to open '%s'\n", filenames[i]);
       } else {
         Append(s, sfile);
         Delete(sfile);
