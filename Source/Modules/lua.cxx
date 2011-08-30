@@ -1273,31 +1273,18 @@ public:
    */
   String *runtimeCode() {
     String *s = NewString("");
-    const char *filenames[] = { "eluarun.swg",
-                                "eluacrun.swg",
-				"luarun.swg", 0 // Must be 0 terminated
-                              };
+    const char *filenames[] = { "luarun.swg", 0
+                              }
+			      ; // Must be 0 terminated
     String *sfile;
-    if (elua_ltr) {
-      sfile = Swig_include_sys(filenames[0]);
-      if (!sfile) {
-        Printf(stderr, "*** Unable to open '%s'\n", filenames[0]);
-      }
-    } else if (eluac_ltr) {
-      sfile = Swig_include_sys(filenames[1]);
-      if (!sfile) {
-        Printf(stderr, "*** Unable to open '%s'\n", filenames[1]);
-      }
-    } else {
+    for (int i = 0; filenames[i] != 0; i++) {
       sfile = Swig_include_sys(filenames[2]);
       if (!sfile) {
         Printf(stderr, "*** Unable to open '%s'\n", filenames[2]);
+      } else {
+        Append(s, sfile);
+        Delete(sfile);
       }
-    }
-
-    if (sfile) {
-      Append(s, sfile);
-      Delete(sfile);
     } 
     return s;
   }
